@@ -1,0 +1,18 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+group 'org.hildan'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'ch.qos.logback:logback-classic:1.1.8'
+    compile 'org.springframework:spring-messaging:4.3.8.RELEASE'
+    compile 'org.springframework:spring-websocket:4.3.8.RELEASE'
+    compile 'org.springframework:spring-context:4.3.8.RELEASE'
+}
