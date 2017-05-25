@@ -1,8 +1,17 @@
-apply plugin: 'java'
-apply plugin: 'idea'
+// bintray plugin is used to upload artifacts to a bintray repo
+plugins { id "com.jfrog.bintray" version "1.6" }
 
-group 'org.hildan'
-version '1.0-SNAPSHOT'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'checkstyle'
+apply plugin: 'maven-publish'
+
+group = 'org.hildan.jackstomp'
+version = '1.0.0'
+description = 'A tiny wrapper around spring SockJS client to make it easy to use with Jackson-serialized objects on ' +
+        'STOMP.'
+ext.labels = ['websocket', 'client', 'jackson', 'json', 'stomp']
 
 sourceCompatibility = 1.8
 
@@ -16,3 +25,69 @@ dependencies {
     compile 'org.springframework:spring-websocket:4.3.8.RELEASE'
     compile 'org.springframework:spring-context:4.3.8.RELEASE'
 }
+
+checkstyle {
+    maxWarnings = 0
+    toolVersion = '7.6'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            // additional jars
+            artifact sourcesJar { classifier "sources" }
+            artifact javadocJar { classifier "javadoc" }
+        }
+    }
+}
+
+def getPropOrEnv = { String prop, String envVar, String defaultValue = null ->
+    if (project.hasProperty(prop)) {
+        return project.property(prop)
+    }
+    return System.getenv(envVar) ?: defaultValue
+}
+
+ext {
+    githubUser = getPropOrEnv('githubUser', 'GITHUB_USER')
+    githubRepoName = project.name
+    githubSlug = "$githubUser/$githubRepoName"
+    githubRepoUrl = "https://github.com/$githubSlug"
+}
+
+bintray {
+    user = getPropOrEnv('bintrayUser', 'BINTRAY_USER')
+    key = getPropOrEnv('bintrayApiKey', 'BINTRAY_KEY')
+    publications = ['maven']
+    publish = true // the version should be auto published after an upload
+
+    pkg {
+        repo = getPropOrEnv('bintrayRepoLibs', 'BINTRAY_REPO_LIBS')
+        name = project.name
+        desc = project.description
+        labels = project.labels
+        licenses = ['MIT']
+
+        websiteUrl = githubRepoUrl
+        issueTrackerUrl = githubRepoUrl + '/issues'
+        vcsUrl = githubRepoUrl + '.git'
+        githubRepo = githubSlug
+
+        version {
+            desc = project.description
+            vcsTag = 'v' + project.version
+            gpg { sign = true }
+        }
+    }
+}
+
+apply from: 'gradle/scripts/release.gradle'
