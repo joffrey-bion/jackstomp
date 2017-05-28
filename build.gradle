@@ -1,8 +1,7 @@
 // bintray plugin is used to upload artifacts to a bintray repo
-plugins { id "com.jfrog.bintray" version "1.6" }
+plugins { id "com.jfrog.bintray" version "1.7.3" }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'checkstyle'
 apply plugin: 'maven-publish'
@@ -11,7 +10,8 @@ group = 'org.hildan.jackstomp'
 version = '1.0.0'
 description = 'A tiny wrapper around spring SockJS client to make it easy to use with Jackson-serialized objects on ' +
         'STOMP.'
-ext.labels = ['websocket', 'client', 'jackson', 'json', 'stomp']
+ext.labels = ['websocket', 'client', 'jackson', 'json', 'stomp', 'spring', 'sockjs']
+ext.licenses = ['MIT']
 
 sourceCompatibility = 1.8
 
@@ -31,25 +31,6 @@ checkstyle {
     toolVersion = '7.6'
 }
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    from javadoc.destinationDir
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-            // additional jars
-            artifact sourcesJar { classifier "sources" }
-            artifact javadocJar { classifier "javadoc" }
-        }
-    }
-}
-
 def getPropOrEnv = { String prop, String envVar, String defaultValue = null ->
     if (project.hasProperty(prop)) {
         return project.property(prop)
@@ -62,20 +43,69 @@ ext {
     githubRepoName = project.name
     githubSlug = "$githubUser/$githubRepoName"
     githubRepoUrl = "https://github.com/$githubSlug"
+    ossrhUserToken = getPropOrEnv('ossrhUserToken', 'OSSRH_USER_TOKEN')
+    ossrhKey = getPropOrEnv('ossrhKey', 'OSSRH_KEY')
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    classifier = 'javadoc'
+}
+
+def pomConfig = {
+    scm {
+        url githubRepoUrl
+        connection 'scm:git:' + githubRepoUrl + '.git'
+        developerConnection 'scm:git:git@github.com:' + githubSlug + '.git'
+    }
+    licenses {
+        license {
+            name 'The MIT License'
+            url 'https://opensource.org/licenses/MIT'
+        }
+    }
+    developers {
+        developer {
+            name 'Joffrey Bion'
+            email 'joffrey.bion@gmail.com'
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', project.name)
+                root.appendNode('description', project.description)
+                root.appendNode('url', githubRepoUrl)
+                root.children().last() + pomConfig
+            }
+        }
+    }
 }
 
 bintray {
     user = getPropOrEnv('bintrayUser', 'BINTRAY_USER')
     key = getPropOrEnv('bintrayApiKey', 'BINTRAY_KEY')
     publications = ['maven']
-    publish = true // the version should be auto published after an upload
+    publish = true
 
     pkg {
         repo = getPropOrEnv('bintrayRepoLibs', 'BINTRAY_REPO_LIBS')
         name = project.name
         desc = project.description
-        labels = project.labels
-        licenses = ['MIT']
+        labels = project.labels ?: [project.name]
+        licenses = project.licenses ?: []
 
         websiteUrl = githubRepoUrl
         issueTrackerUrl = githubRepoUrl + '/issues'
@@ -86,8 +116,16 @@ bintray {
             desc = project.description
             vcsTag = 'v' + project.version
             gpg { sign = true }
+            mavenCentralSync {
+                sync = true
+                user = ossrhUserToken
+                password = ossrhKey
+            }
         }
     }
 }
 
 apply from: 'gradle/scripts/release.gradle'
+
+bintrayUpload.dependsOn(build)
+release.dependsOn(bintrayUpload)
