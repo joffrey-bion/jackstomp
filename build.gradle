@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-classic:1.1.8'
+    compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'org.springframework:spring-messaging:4.3.8.RELEASE'
     compile 'org.springframework:spring-websocket:4.3.8.RELEASE'
     compile 'org.springframework:spring-context:4.3.8.RELEASE'
@@ -115,7 +115,9 @@ bintray {
         version {
             desc = project.description
             vcsTag = 'v' + project.version
-            gpg { sign = true }
+            gpg {
+                sign = true
+            }
             mavenCentralSync {
                 sync = true
                 user = ossrhUserToken
