@@ -53,7 +53,9 @@ Sometimes, what you need is a basic request/response, but still on websockets. `
  
 ```java
 User newUser = new User("Bob");
+
 User createdUser = session.request(newUser, User.class, "/app/createUser", "/topic/createdUsers");
+
 assertNotNull(createdUser);
 assertEquals(newUser, createdUser);
 ```
@@ -64,10 +66,10 @@ Which is equivalent to:
 User newUser = new User("Bob");
 
 Channel<User> createdUsers = session.subscribe("/topic/createdUsers", User.class);
+session.send("/app/createUser", newUser);
+User createdUser = createdUsers.next();
+createdUsers.unsubscribe();
 
-session.send("/app/createUser", newUser); 
-
-User createdUser = createdUsers.next(); // blocks until a msg is received, returns null after a default timeout
 assertNotNull(createdUser);
 assertEquals(newUser, createdUser);
 ```
