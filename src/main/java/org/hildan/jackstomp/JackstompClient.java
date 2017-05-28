@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.springframework.context.Lifecycle;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -21,7 +21,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
  * A simple wrapper around a {@link WebSocketStompClient} which preconfigures websocket transports, a Jackson
  * converter for messages, and allows for the creation of {@link JackstompSession}s.
  */
-public class JackstompClient implements Lifecycle {
+public class JackstompClient implements SmartLifecycle {
 
     private static final long DEFAULT_CONNECTION_TIMEOUT_IN_SECONDS = 15;
 
@@ -38,6 +38,9 @@ public class JackstompClient implements Lifecycle {
     /**
      * Creates a {@code JackstompClient} based on the given {@link WebSocketStompClient}. This allows you to
      * configure as you please the actual client used by Jackstomp.
+     *
+     * @param client
+     *         the websocket client this {@code JackstompClient} should use instead of the default
      */
     public JackstompClient(WebSocketStompClient client) {
         this.client = client;
@@ -71,6 +74,7 @@ public class JackstompClient implements Lifecycle {
      *         the URL to connect to
      *
      * @return a new {@link JackstompSession} for the created connection
+     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the connection
      * @throws ExecutionException
@@ -93,6 +97,7 @@ public class JackstompClient implements Lifecycle {
      *         the time unit of the timeout argument
      *
      * @return a new {@link JackstompSession} for the created connection
+     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the connection
      * @throws ExecutionException
@@ -100,8 +105,8 @@ public class JackstompClient implements Lifecycle {
      * @throws TimeoutException
      *         if the connection took too long to establish
      */
-    public JackstompSession connect(String url, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    public JackstompSession connect(String url, long timeout, TimeUnit unit) throws InterruptedException,
+            ExecutionException, TimeoutException {
         StompSession session = client.connect(url, new LoggingStompSessionHandler()).get(timeout, unit);
         session.setAutoReceipt(true);
         return new JackstompSession(session);
@@ -118,7 +123,22 @@ public class JackstompClient implements Lifecycle {
     }
 
     @Override
+    public void stop(Runnable callback) {
+        client.stop(callback);
+    }
+
+    @Override
     public boolean isRunning() {
         return client.isRunning();
+    }
+
+    @Override
+    public boolean isAutoStartup() {
+        return client.isAutoStartup();
+    }
+
+    @Override
+    public int getPhase() {
+        return client.getPhase();
     }
 }

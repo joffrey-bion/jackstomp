@@ -53,7 +53,9 @@ public class JackstompSession implements StompSession {
      * @param destination
      *         the destination to subscribe to
      * @param payloadType
-     *         the expected type for received messages
+     *         the expected type for received messages, for Jackson deserialization
+     * @param <T>
+     *         the java type that received messages should be deserialized to
      *
      * @return a new channel to use to actively check for received values, unsubscribe, or track receipts
      */
@@ -122,11 +124,12 @@ public class JackstompSession implements StompSession {
      *
      * @return the response object, deserialized from the JSON received on the responseDestination, or null if no
      * response was received before timeout.
+     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the response
      */
-    public <T> T request(Object payload, Class<T> responseType, String requestDestination, String responseDestination)
-            throws InterruptedException {
+    public <T> T request(Object payload, Class<T> responseType, String requestDestination,
+                         String responseDestination) throws InterruptedException {
         Channel<T> channel = subscribe(responseDestination, responseType);
         send(requestDestination, payload);
         T msg = channel.next();
@@ -146,11 +149,12 @@ public class JackstompSession implements StompSession {
      *         the destination to expect a response on
      *
      * @return true if the event message was received before timeout, false otherwise
+     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the response
      */
-    public boolean request(Object payload, String requestDestination, String responseDestination)
-            throws InterruptedException {
+    public boolean request(Object payload, String requestDestination, String responseDestination) throws
+            InterruptedException {
         Channel<Object> channel = subscribeEmptyMsgs(responseDestination);
         send(requestDestination, payload);
         Object msg = channel.next();
