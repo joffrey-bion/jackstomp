@@ -8,7 +8,7 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 
 /**
- * Wrapper a {@link StompSession} that provides additional subscription features. It can return a {@link Channel}
+ * A wrapper around {@link StompSession} that provides additional subscription features. It can return a {@link Channel}
  * upon subscription for a given payload type, which can then be queried actively. This is particularly useful for
  * unit tests.
  */
