@@ -23,7 +23,10 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
  */
 public class JackstompClient implements SmartLifecycle {
 
-    private static final long DEFAULT_CONNECTION_TIMEOUT_IN_SECONDS = 15;
+    /**
+     * The default timeout for new server connections.
+     */
+    private static final long DEFAULT_TIMEOUT_SEC = 15;
 
     private final WebSocketStompClient client;
 
@@ -68,7 +71,7 @@ public class JackstompClient implements SmartLifecycle {
     }
 
     /**
-     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_CONNECTION_TIMEOUT_IN_SECONDS} seconds.
+     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
      *
      * @param url
      *         the URL to connect to
@@ -83,11 +86,11 @@ public class JackstompClient implements SmartLifecycle {
      *         if the connection took too long to establish
      */
     public JackstompSession connect(String url) throws InterruptedException, ExecutionException, TimeoutException {
-        return connect(url, DEFAULT_CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+        return connect(url, DEFAULT_TIMEOUT_SEC, TimeUnit.SECONDS);
     }
 
     /**
-     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_CONNECTION_TIMEOUT_IN_SECONDS} seconds.
+     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
      *
      * @param url
      *         the URL to connect to

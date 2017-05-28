@@ -15,7 +15,6 @@ class LoggingStompSessionHandler extends StompSessionHandlerAdapter {
 
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-        logger.info("Client connected under session id " + session.getSessionId());
     }
 
     @Override

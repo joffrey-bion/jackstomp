@@ -17,7 +17,7 @@ public class JackstompSession implements StompSession {
     private final StompSession stompSession;
 
     /**
-     * Creates a new {@code JackstompSession} wrapping the given {@link StompSession}.
+     * Creates a new {@code JackstompSession} wrapping and delegating to the given {@link StompSession}.
      *
      * @param stompSession
      *         the session to wrap
@@ -83,31 +83,6 @@ public class JackstompSession implements StompSession {
         return new Channel<>(sub, blockingQueue);
     }
 
-    @Override
-    public Receiptable acknowledge(String messageId, boolean consumed) {
-        return stompSession.acknowledge(messageId, consumed);
-    }
-
-    @Override
-    public String getSessionId() {
-        return stompSession.getSessionId();
-    }
-
-    @Override
-    public boolean isConnected() {
-        return stompSession.isConnected();
-    }
-
-    @Override
-    public void setAutoReceipt(boolean enabled) {
-        stompSession.setAutoReceipt(enabled);
-    }
-
-    @Override
-    public void disconnect() {
-        stompSession.disconnect();
-    }
-
     /**
      * Makes a synchronous request/response call via a send and a subscription.
      *
@@ -160,5 +135,30 @@ public class JackstompSession implements StompSession {
         Object msg = channel.next();
         channel.unsubscribe();
         return msg != null;
+    }
+
+    @Override
+    public Receiptable acknowledge(String messageId, boolean consumed) {
+        return stompSession.acknowledge(messageId, consumed);
+    }
+
+    @Override
+    public String getSessionId() {
+        return stompSession.getSessionId();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return stompSession.isConnected();
+    }
+
+    @Override
+    public void setAutoReceipt(boolean enabled) {
+        stompSession.setAutoReceipt(enabled);
+    }
+
+    @Override
+    public void disconnect() {
+        stompSession.disconnect();
     }
 }
