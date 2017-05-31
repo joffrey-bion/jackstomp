@@ -32,10 +32,36 @@ public class JackstompClient implements SmartLifecycle {
 
     /**
      * Creates a {@code JackstompClient} with convenient defaults. It creates a pre-configured
-     * {@link WebSocketStompClient} using Spring {@link SockJsClient} and a Jackson message converter.
+     * {@link WebSocketStompClient} using a Spring {@link SockJsClient} and a Jackson message converter.
+     * <p>
+     * Only the {@link WebSocketTransport} is used for the {@link SockJsClient}. For more transports options, use
+     * {@link #JackstompClient(List)}.
      */
     public JackstompClient() {
-        this(createDefaultStompClient());
+        this(createWsTransports());
+    }
+
+    /**
+     * Creates a {@code JackstompClient} with convenient defaults. It creates a pre-configured
+     * {@link WebSocketStompClient} using a Spring {@link SockJsClient} on the given transports and a Jackson message
+     * converter.
+     *
+     * @param transports
+     *         the transports to use for the inner {@link SockJsClient}
+     */
+    public JackstompClient(List<Transport> transports) {
+        this(createWebSocketClient(transports));
+    }
+
+    /**
+     * Creates a {@code JackstompClient} with convenient defaults. It creates a pre-configured
+     * {@link WebSocketStompClient} using the given {@link WebSocketClient} and a Jackson message converter.
+     *
+     * @param webSocketClient
+     *         the {@link WebSocketClient} to use from the {@link WebSocketStompClient}
+     */
+    public JackstompClient(WebSocketClient webSocketClient) {
+        this(createStompClient(webSocketClient));
     }
 
     /**
@@ -49,19 +75,19 @@ public class JackstompClient implements SmartLifecycle {
         this.client = client;
     }
 
-    private static WebSocketStompClient createDefaultStompClient() {
-        WebSocketStompClient stompClient = new WebSocketStompClient(createWebSocketClient());
+    private static List<Transport> createWsTransports() {
+        return Collections.singletonList(new WebSocketTransport(new StandardWebSocketClient()));
+    }
+
+    private static WebSocketClient createWebSocketClient(List<Transport> transports) {
+        return new SockJsClient(transports);
+    }
+
+    private static WebSocketStompClient createStompClient(WebSocketClient webSocketClient) {
+        WebSocketStompClient stompClient = new WebSocketStompClient(webSocketClient);
         stompClient.setMessageConverter(new MappingJackson2MessageConverter()); // for custom object exchanges
         stompClient.setTaskScheduler(createTaskScheduler()); // for heartbeats
         return stompClient;
-    }
-
-    private static WebSocketClient createWebSocketClient() {
-        return new SockJsClient(createWsTransports());
-    }
-
-    private static List<Transport> createWsTransports() {
-        return Collections.singletonList(new WebSocketTransport(new StandardWebSocketClient()));
     }
 
     private static ThreadPoolTaskScheduler createTaskScheduler() {
