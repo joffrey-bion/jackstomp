@@ -30,8 +30,8 @@ class EmptyMsgStompFrameHandler implements StompFrameHandler {
     }
 
     @Override
-    public void handleFrame(StompHeaders stompHeaders, Object o) {
-        if (o != null) {
+    public void handleFrame(StompHeaders stompHeaders, Object payload) {
+        if (payload != null) {
             throw new IllegalArgumentException("Non-null payload in EmptyMsgStompFrameHandler");
         }
         blockingQueue.offer(new Object());

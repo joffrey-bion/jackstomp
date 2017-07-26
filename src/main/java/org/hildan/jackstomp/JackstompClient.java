@@ -97,7 +97,7 @@ public class JackstompClient implements SmartLifecycle {
     }
 
     /**
-     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
+     * Connects synchronously to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
      *
      * @param url
      *         the URL to connect to
@@ -116,7 +116,7 @@ public class JackstompClient implements SmartLifecycle {
     }
 
     /**
-     * Connects to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
+     * Connects synchronously to the given URL. Uses a default timeout of {@value #DEFAULT_TIMEOUT_SEC} seconds.
      *
      * @param url
      *         the URL to connect to
