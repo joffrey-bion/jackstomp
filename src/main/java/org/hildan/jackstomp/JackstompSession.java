@@ -2,15 +2,16 @@ package org.hildan.jackstomp;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.Consumer;
 
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 
 /**
- * A wrapper around {@link StompSession} that provides additional subscription features. It can return a {@link Channel}
- * upon subscription for a given payload type, which can then be queried actively. This is particularly useful for
- * unit tests.
+ * A wrapper around {@link StompSession} that provides additional subscription features. For instance, it can return a
+ * {@link Channel} upon subscription for a given payload type, which can then be queried actively. This is particularly
+ * useful for unit tests.
  */
 public class JackstompSession implements StompSession {
 
@@ -47,7 +48,47 @@ public class JackstompSession implements StompSession {
     }
 
     /**
-     * Subscribe to the given destination by sending a SUBSCRIBE frame and queue received messages in the returned
+     * Subscribes to the given destination by sending a SUBSCRIBE frame, and handles received messages with the
+     * specified handler.
+     *
+     * @param destination
+     *         the destination to subscribe to
+     * @param payloadType
+     *         the expected type for received messages, for Jackson deserialization
+     * @param handler
+     *         the handler for received messages
+     * @param <T>
+     *         the java type that received messages should be deserialized to
+     *
+     * @return a handle to use to unsubscribe and/or track receipts
+     */
+    public <T> Subscription subscribe(String destination, Class<T> payloadType, Consumer<T> handler) {
+        StompFrameHandler frameHandler = new SingleTypeFrameHandler<>(payloadType, handler);
+        return stompSession.subscribe(destination, frameHandler);
+    }
+
+    /**
+     * Subscribes to the given destination by sending a SUBSCRIBE frame, and handles received messages with the
+     * specified handler.
+     *
+     * @param headers
+     *         the headers for the SUBSCRIBE message frame
+     * @param payloadType
+     *         the expected type for received messages, for Jackson deserialization
+     * @param handler
+     *         the handler for received messages
+     * @param <T>
+     *         the java type that received messages should be deserialized to
+     *
+     * @return a handle to use to unsubscribe and/or track receipts
+     */
+    public <T> Subscription subscribe(StompHeaders headers, Class<T> payloadType, Consumer<T> handler) {
+        StompFrameHandler frameHandler = new SingleTypeFrameHandler<>(payloadType, handler);
+        return stompSession.subscribe(headers, frameHandler);
+    }
+
+    /**
+     * Subscribes to the given destination by sending a SUBSCRIBE frame, and queues received messages in the returned
      * {@link Channel}.
      *
      * @param destination
@@ -99,12 +140,11 @@ public class JackstompSession implements StompSession {
      *
      * @return the response object, deserialized from the JSON received on the responseDestination, or null if no
      * response was received before timeout.
-     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the response
      */
-    public <T> T request(Object payload, Class<T> responseType, String requestDestination,
-                         String responseDestination) throws InterruptedException {
+    public <T> T request(Object payload, Class<T> responseType, String requestDestination, String responseDestination)
+            throws InterruptedException {
         Channel<T> channel = subscribe(responseDestination, responseType);
         send(requestDestination, payload);
         T msg = channel.next();
@@ -124,12 +164,11 @@ public class JackstompSession implements StompSession {
      *         the destination to expect a response on
      *
      * @return true if the event message was received before timeout, false otherwise
-     *
      * @throws InterruptedException
      *         if the current thread was interrupted while waiting for the response
      */
-    public boolean request(Object payload, String requestDestination, String responseDestination) throws
-            InterruptedException {
+    public boolean request(Object payload, String requestDestination, String responseDestination)
+            throws InterruptedException {
         Channel<Object> channel = subscribeEmptyMsgs(responseDestination);
         send(requestDestination, payload);
         Object msg = channel.next();
