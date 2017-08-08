@@ -104,6 +104,15 @@ public class JackstompClient implements SmartLifecycle {
     }
 
     /**
+     * Returns the {@link WebSocketStompClient} wrapped by this {@code JackstompClient}.
+     *
+     * @return the {@link WebSocketStompClient} wrapped by this {@code JackstompClient}.
+     */
+    public WebSocketStompClient getWebSocketClient() {
+        return client;
+    }
+
+    /**
      * Connect to the given WebSocket URL and notify the given {@link StompSessionHandler} when connected on the STOMP
      * level after the CONNECTED frame is received.
      *
