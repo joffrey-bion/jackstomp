@@ -14,14 +14,19 @@ import org.springframework.messaging.simp.stomp.StompSession.Subscription;
  */
 public class Channel<T> implements Subscription {
 
-    /**
-     * The default timeout for message queue blocking retrieval.
-     */
-    private static final int DEFAULT_TIMEOUT_SEC = 10;
-
     private final BlockingQueue<T> messageQueue;
 
     private final Subscription subscription;
+
+    /**
+     * The default timeout for message queue blocking retrieval.
+     */
+    private int defaultTimeout = 10;
+
+    /**
+     * The default timeout's unit.
+     */
+    private TimeUnit defaultTimeoutUnit = TimeUnit.SECONDS;
 
     /**
      * Creates a channel encapsulating the given {@link Subscription} and appending to the given queue.
@@ -37,8 +42,22 @@ public class Channel<T> implements Subscription {
     }
 
     /**
-     * Removes and retrieves the first of the received messages, waiting up to {@value #DEFAULT_TIMEOUT_SEC} seconds if
-     * necessary for a message to arrive.
+     * Sets the default timeout to wait for messages to arrive. This is used by the {@link #next()} method that
+     * doesn't take a timeout argument.
+     *
+     * @param timeout
+     *         how long to wait for messages before giving up, in units of {@code unit}
+     * @param unit
+     *         a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
+     */
+    public void setDefaultTimeout(int timeout, TimeUnit unit) {
+        this.defaultTimeout = timeout;
+        this.defaultTimeoutUnit = unit;
+    }
+
+    /**
+     * Removes and retrieves the first of the received messages, waiting up to a default timeout if necessary for a
+     * message to arrive. The default timeout can be set using {@link #setDefaultTimeout(int, TimeUnit)}.
      *
      * @return the next message of this channel, or {@code null} if the waiting time elapsed before a message arrives.
      *
@@ -46,7 +65,7 @@ public class Channel<T> implements Subscription {
      *         if the current thread was interrupted while waiting for a message to arrive
      */
     public T next() throws InterruptedException {
-        return messageQueue.poll(DEFAULT_TIMEOUT_SEC, TimeUnit.SECONDS);
+        return messageQueue.poll(defaultTimeout, defaultTimeoutUnit);
     }
 
     /**
