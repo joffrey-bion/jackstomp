@@ -2,6 +2,7 @@ package org.hildan.jackstomp;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
@@ -18,6 +19,16 @@ public class JackstompSession implements StompSession {
     private final StompSession stompSession;
 
     /**
+     * The default timeout to receive a response in calls to {@link #request(Object, Class, String, String)}.
+     */
+    private int defaultRequestTimeout = 10;
+
+    /**
+     * The default timeout's unit.
+     */
+    private TimeUnit defaultRequestTimeoutUnit = TimeUnit.SECONDS;
+
+    /**
      * Creates a new {@code JackstompSession} wrapping and delegating to the given {@link StompSession}.
      *
      * @param stompSession
@@ -25,6 +36,20 @@ public class JackstompSession implements StompSession {
      */
     public JackstompSession(StompSession stompSession) {
         this.stompSession = stompSession;
+    }
+
+    /**
+     * Sets the default timeout to wait for messages to arrive. This is used by the
+     * {@link #request(Object, Class, String, String)} method that doesn't take a timeout argument.
+     *
+     * @param timeout
+     *         how long to wait for messages before giving up, in units of {@code unit}
+     * @param unit
+     *         a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
+     */
+    public void setDefaultRequestTimeout(int timeout, TimeUnit unit) {
+        this.defaultRequestTimeout = timeout;
+        this.defaultRequestTimeoutUnit = unit;
     }
 
     @Override
@@ -125,7 +150,8 @@ public class JackstompSession implements StompSession {
     }
 
     /**
-     * Makes a synchronous request/response call via a send and a subscription.
+     * An overloaded version of {@link #request(Object, Class, String, String, int, TimeUnit)} using the default
+     * timeout. The default timeout can be modified using {@link #setDefaultRequestTimeout(int, TimeUnit)}.
      *
      * @param payload
      *         the payload to send on the given requestDestination
@@ -145,16 +171,49 @@ public class JackstompSession implements StompSession {
      */
     public <T> T request(Object payload, Class<T> responseType, String requestDestination, String responseDestination)
             throws InterruptedException {
+        return request(payload, responseType, requestDestination, responseDestination, defaultRequestTimeout,
+                defaultRequestTimeoutUnit);
+    }
+
+    /**
+     * Makes a synchronous request/response call via a send and a one-time subscription. <p> A SUBSCRIBE frame is first
+     * sent to the server to be able to receive the response, and then the payload is sent via a SEND frame. The
+     * response is expected to be received on the subscribed channel with a default timeout as specified by {@link
+     * Channel#next()}, and then the subscription is ended whether or not a response has been received. The return value
+     * is the received object, or null if none were received.
+     *
+     * @param payload
+     *         the payload to send on the given requestDestination
+     * @param responseType
+     *         the type of the response to expect on the responseDestination
+     * @param requestDestination
+     *         the destination to send payload to
+     * @param responseDestination
+     *         the destination to expect a response on
+     * @param timeout
+     *         how long to wait for messages before giving up, in units of {@code unit}
+     * @param timeoutUnit
+     *         a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
+     * @param <T>
+     *         the type of object to receive as a response
+     *
+     * @return the response object, deserialized from the JSON received on the responseDestination, or null if no
+     * response was received before timeout.
+     * @throws InterruptedException
+     *         if the current thread was interrupted while waiting for the response
+     */
+    public <T> T request(Object payload, Class<T> responseType, String requestDestination, String responseDestination,
+            int timeout, TimeUnit timeoutUnit) throws InterruptedException {
         Channel<T> channel = subscribe(responseDestination, responseType);
         send(requestDestination, payload);
-        T msg = channel.next();
+        T msg = channel.next(timeout, timeoutUnit);
         channel.unsubscribe();
         return msg;
     }
 
     /**
-     * Makes a synchronous request/response call via a send and a subscription, but does not expect any value as
-     * response, just an event message with no body.
+     * An overloaded version of {@link #request(Object, String, String, int, TimeUnit)} using the default timeout.
+     * The default timeout can be modified using {@link #setDefaultRequestTimeout(int, TimeUnit)}.
      *
      * @param payload
      *         the payload to send on the given requestDestination
@@ -169,9 +228,34 @@ public class JackstompSession implements StompSession {
      */
     public boolean request(Object payload, String requestDestination, String responseDestination)
             throws InterruptedException {
+        return request(payload, requestDestination, responseDestination, defaultRequestTimeout,
+                defaultRequestTimeoutUnit);
+    }
+
+    /**
+     * An overloaded version of {@link #request(Object, Class, String, String, int, TimeUnit)} that does not expect any
+     * value as response, just an event message with no body.
+     *
+     * @param payload
+     *         the payload to send on the given requestDestination
+     * @param requestDestination
+     *         the destination to send payload to
+     * @param responseDestination
+     *         the destination to expect a response on
+     * @param timeout
+     *         how long to wait for messages before giving up, in units of {@code unit}
+     * @param timeoutUnit
+     *         a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
+     *
+     * @return true if the event message was received before timeout, false otherwise
+     * @throws InterruptedException
+     *         if the current thread was interrupted while waiting for the response
+     */
+    public boolean request(Object payload, String requestDestination, String responseDestination, int timeout,
+            TimeUnit timeoutUnit) throws InterruptedException {
         Channel<Object> channel = subscribeEmptyMsgs(responseDestination);
         send(requestDestination, payload);
-        Object msg = channel.next();
+        Object msg = channel.next(timeout, timeoutUnit);
         channel.unsubscribe();
         return msg != null;
     }
