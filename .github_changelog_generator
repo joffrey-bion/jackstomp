@@ -1,7 +1,0 @@
-user=joffrey-bion
-project=jackstomp
-since-tag=v1.0.0
-bug-labels=bug
-enhancement-labels=enhancement
-exclude-labels=wontfix,duplicate,invalid
-release-url=https://bintray.com/joffrey-bion/maven/jackstomp/%s

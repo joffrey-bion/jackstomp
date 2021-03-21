@@ -1,8 +1,7 @@
 # Jackstomp
 
-[![Bintray Download](https://api.bintray.com/packages/joffrey-bion/maven/jackstomp/images/download.svg)](https://bintray.com/joffrey-bion/maven/jackstomp/_latestVersion)
 [![Maven central version](https://img.shields.io/maven-central/v/org.hildan.jackstomp/jackstomp.svg)](http://mvnrepository.com/artifact/org.hildan.jackstomp/jackstomp)
-[![Build Status](https://travis-ci.org/joffrey-bion/jackstomp.svg?branch=master)](https://travis-ci.org/joffrey-bion/jackstomp)
+[![Github Build](https://img.shields.io/github/workflow/status/joffrey-bion/jackstomp/CI%20Build?label=build&logo=github)](https://github.com/joffrey-bion/jackstomp/actions?query=workflow%3A%22CI+Build%22)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/joffrey-bion/jackstomp/blob/master/LICENSE)
 
 A tiny wrapper around spring SockJS client to make it easy to use with Jackson-serialized objects on STOMP.
